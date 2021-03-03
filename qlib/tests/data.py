@@ -31,13 +31,13 @@ class GetData:
         if resp.status_code != 200:
             raise requests.exceptions.HTTPError()
 
-        chuck_size = 1024
         logger.warning(
             f"The data for the example is collected from Yahoo Finance. Please be aware that the quality of the data might not be perfect. (You can refer to the original data source: https://finance.yahoo.com/lookup.)"
         )
         logger.info(f"{file_name} downloading......")
         with tqdm(total=int(resp.headers.get("Content-Length", 0))) as p_bar:
             with target_path.open("wb") as fp:
+                chuck_size = 1024
                 for chuck in resp.iter_content(chunk_size=chuck_size):
                     fp.write(chuck)
                     p_bar.update(chuck_size)

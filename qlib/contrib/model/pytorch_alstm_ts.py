@@ -154,7 +154,7 @@ class ALSTM(Model):
 
         mask = torch.isfinite(label)
 
-        if self.metric == "" or self.metric == "loss":
+        if self.metric in ["", "loss"]:
             return -self.loss_fn(pred[mask], label[mask])
 
         raise ValueError("unknown metric `%s`" % self.metric)
@@ -213,7 +213,7 @@ class ALSTM(Model):
         train_loader = DataLoader(dl_train, batch_size=self.batch_size, shuffle=True, num_workers=self.n_jobs)
         valid_loader = DataLoader(dl_valid, batch_size=self.batch_size, shuffle=False, num_workers=self.n_jobs)
 
-        if save_path == None:
+        if save_path is None:
             save_path = create_save_path(save_path)
 
         stop_steps = 0

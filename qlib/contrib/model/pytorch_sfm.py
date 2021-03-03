@@ -174,8 +174,7 @@ class SFM_Model(nn.Module):
         ]
 
     def get_constants(self, x):
-        constants = []
-        constants.append([torch.tensor(1.0).to(self.device) for _ in range(6)])
+        constants = [[torch.tensor(1.0).to(self.device) for _ in range(6)]]
         constants.append([torch.tensor(1.0).to(self.device) for _ in range(7)])
         array = np.array([float(ii) / self.freq_dim for ii in range(self.freq_dim)])
         constants.append(torch.tensor(array).to(self.device))
@@ -429,7 +428,7 @@ class SFM(Model):
 
         mask = torch.isfinite(label)
 
-        if self.metric == "" or self.metric == "loss":
+        if self.metric in ["", "loss"]:
             return -self.loss_fn(pred[mask], label[mask])
 
         raise ValueError("unknown metric `%s`" % self.metric)

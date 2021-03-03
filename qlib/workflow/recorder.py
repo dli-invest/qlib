@@ -41,15 +41,15 @@ class Recorder:
 
     @property
     def info(self):
-        output = dict()
-        output["class"] = "Recorder"
-        output["id"] = self.id
-        output["name"] = self.name
-        output["experiment_id"] = self.experiment_id
-        output["start_time"] = self.start_time
-        output["end_time"] = self.end_time
-        output["status"] = self.status
-        return output
+        return {
+            "class": "Recorder",
+            "id": self.id,
+            "name": self.name,
+            "experiment_id": self.experiment_id,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "status": self.status,
+        }
 
     def set_recorder_name(self, rname):
         self.recorder_name = rname

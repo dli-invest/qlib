@@ -352,8 +352,7 @@ class ExpressionDFilter(SeriesDFilter):
             # use LocalDatasetProvider
             _features = DatasetD.dataset(instruments, [self.rule_expression], fstart, fend, freq=self.filter_freq)
         rule_expression_field_name = list(_features.keys())[0]
-        all_filter_series = _features[rule_expression_field_name]
-        return all_filter_series
+        return _features[rule_expression_field_name]
 
     def from_config(config):
         return ExpressionDFilter(

@@ -71,8 +71,7 @@ def get_position_value(evaluate_date, position):
         freq="day",
         disk_cache=0,
     )
-    value = _get_position_value_from_df(evaluate_date, position, close_data_df)
-    return value
+    return _get_position_value_from_df(evaluate_date, position, close_data_df)
 
 
 def get_position_list_value(positions):
@@ -137,9 +136,7 @@ def get_annual_return_from_positions(positions, init_asset_value):
     p_end = get_position_value(end_time, positions[end_time])
     p_start = init_asset_value
     n_period = len(date_range_list)
-    annual = pow((p_end / p_start), (250 / n_period)) - 1
-
-    return annual
+    return pow((p_end / p_start), (250 / n_period)) - 1
 
 
 def get_annaul_return_from_return_series(r, method="ci"):
@@ -153,9 +150,7 @@ def get_annaul_return_from_return_series(r, method="ci"):
         interest calculation method, ci(compound interest)/si(simple interest)
     """
     mean = r.mean()
-    annual = (1 + mean) ** 250 - 1 if method == "ci" else mean * 250
-
-    return annual
+    return (1 + mean) ** 250 - 1 if method == "ci" else mean * 250
 
 
 def get_sharpe_ratio_from_return_series(r, risk_free_rate=0.00, method="ci"):
@@ -172,9 +167,7 @@ def get_sharpe_ratio_from_return_series(r, risk_free_rate=0.00, method="ci"):
     """
     std = r.std(ddof=1)
     annual = get_annaul_return_from_return_series(r, method=method)
-    sharpe = (annual - risk_free_rate) / std / np.sqrt(250)
-
-    return sharpe
+    return (annual - risk_free_rate) / std / np.sqrt(250)
 
 
 def get_max_drawdown_from_series(r):
@@ -219,9 +212,7 @@ def get_alpha(r, b, risk_free_rate=0.03):
     annaul_r = get_annaul_return_from_return_series(r)
     annaul_b = get_annaul_return_from_return_series(b)
 
-    alpha = annaul_r - risk_free_rate - beta * (annaul_b - risk_free_rate)
-
-    return alpha
+    return annaul_r - risk_free_rate - beta * (annaul_b - risk_free_rate)
 
 
 def get_volatility_from_series(r):

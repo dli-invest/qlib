@@ -148,13 +148,9 @@ class DumpDataBase:
         return file_path.name[: -len(self.file_suffix)].strip().lower()
 
     def get_dump_fields(self, df_columns: Iterable[str]) -> Iterable[str]:
-        return (
-            self._include_fields
-            if self._include_fields
-            else set(df_columns) - set(self._exclude_fields)
+        return self._include_fields or (set(df_columns) - set(self._exclude_fields)
             if self._exclude_fields
-            else df_columns
-        )
+            else df_columns)
 
     @staticmethod
     def _read_calendars(calendar_path: Path) -> List[pd.Timestamp]:
@@ -166,7 +162,7 @@ class DumpDataBase:
         )
 
     def _read_instruments(self, instrument_path: Path) -> pd.DataFrame:
-        df = pd.read_csv(
+        return pd.read_csv(
             instrument_path,
             sep=self.INSTRUMENTS_SEP,
             names=[
@@ -176,8 +172,6 @@ class DumpDataBase:
                 self.SAVE_INST_FIELD,
             ],
         )
-
-        return df
 
     def save_calendars(self, calendars_data: list):
         self._calendars_dir.mkdir(parents=True, exist_ok=True)
@@ -211,8 +205,7 @@ class DumpDataBase:
         # align index
         cal_df.set_index(self.date_field_name, inplace=True)
         df.set_index(self.date_field_name, inplace=True)
-        r_df = df.reindex(cal_df.index)
-        return r_df
+        return df.reindex(cal_df.index)
 
     @staticmethod
     def get_datetime_index(df: pd.DataFrame, calendar_list: List[pd.Timestamp]) -> int:

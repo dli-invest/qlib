@@ -220,15 +220,17 @@ class YahooCollector:
     def _get_data(self, symbol):
         _result = None
         df = self._get_from_remote(symbol)
-        if isinstance(df, pd.DataFrame):
-            if not df.empty:
-                if self._check_small_data:
-                    if self._save_small_data(symbol, df) is not None:
-                        _result = symbol
-                        self.save_stock(symbol, df)
-                else:
-                    _result = symbol
-                    self.save_stock(symbol, df)
+        if (
+            isinstance(df, pd.DataFrame)
+            and not df.empty
+            and (
+                self._check_small_data
+                and self._save_small_data(symbol, df) is not None
+                or not self._check_small_data
+            )
+        ):
+            _result = symbol
+            self.save_stock(_result, df)
         return _result
 
     def _collector(self, stock_list):
@@ -427,8 +429,6 @@ class YahooNormalize:
                     df[_col] = df[_col] * _close
                 elif _col != "change":
                     df[_col] = df[_col] / _close
-                else:
-                    pass
             df.reset_index().to_csv(self._target_dir.joinpath(file_path.name), index=False)
 
         with ThreadPoolExecutor(max_workers=self._max_workers) as worker:

@@ -201,9 +201,7 @@ class ShrinkCovEstimator(RiskModel):
                 self.TGT_CONST_CORR,
                 self.TGT_SINGLE_FACTOR,
             ], f"shrinking target `{target} is not supported"
-        elif isinstance(target, np.ndarray):
-            pass
-        else:
+        elif not isinstance(target, np.ndarray):
             raise TypeError("invalid argument type for `target`")
         if alpha == self.SHR_OAS and target != self.TGT_CONST_VAR:
             raise NotImplementedError("currently `oas` can only support `const_var` as target")
@@ -306,9 +304,7 @@ class ShrinkCovEstimator(RiskModel):
 
         A = (1 - 2 / p) * (trS2 + tr2S)
         B = (n + 1 - 2 / p) * (trS2 + tr2S / p)
-        alpha = A / B
-
-        return alpha
+        return A / B
 
     def _get_shrink_param_lw_const_var(self, X: np.ndarray, S: np.ndarray, F: np.ndarray) -> float:
         """Ledoit-Wolf Shrinkage Estimator (Constant Variance)
@@ -323,9 +319,7 @@ class ShrinkCovEstimator(RiskModel):
         gamma = np.linalg.norm(S - F, "fro") ** 2
 
         kappa = phi / gamma
-        alpha = max(0, min(1, kappa / t))
-
-        return alpha
+        return max(0, min(1, kappa / t))
 
     def _get_shrink_param_lw_const_corr(self, X: np.ndarray, S: np.ndarray, F: np.ndarray) -> float:
         """Ledoit-Wolf Shrinkage Estimator (Constant Correlation)
@@ -349,9 +343,7 @@ class ShrinkCovEstimator(RiskModel):
         gamma = np.linalg.norm(S - F, "fro") ** 2
 
         kappa = (phi - rho) / gamma
-        alpha = max(0, min(1, kappa / t))
-
-        return alpha
+        return max(0, min(1, kappa / t))
 
     def _get_shrink_param_lw_single_factor(self, X: np.ndarray, S: np.ndarray, F: np.ndarray) -> float:
         """Ledoit-Wolf Shrinkage Estimator (Single Factor Model)
@@ -381,9 +373,7 @@ class ShrinkCovEstimator(RiskModel):
         gamma = np.linalg.norm(S - F, "fro") ** 2
 
         kappa = (phi - rho) / gamma
-        alpha = max(0, min(1, kappa / t))
-
-        return alpha
+        return max(0, min(1, kappa / t))
 
 
 class POETCovEstimator(RiskModel):
@@ -462,6 +452,4 @@ class POETCovEstimator(RiskModel):
 
         Rthresh = M - np.diag(np.diag(M)) + np.eye(p)
         SigmaU = (SuDiag ** 0.5).dot(Rthresh).dot(SuDiag ** 0.5)
-        SigmaY = SigmaU + Lowrank
-
-        return SigmaY
+        return SigmaU + Lowrank

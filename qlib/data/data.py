@@ -402,8 +402,7 @@ class DatasetProvider(abc.ABC):
         if len(fields) == 0:
             raise ValueError("fields cannot be empty")
         fields = fields.copy()
-        column_names = [str(f) for f in fields]
-        return column_names
+        return [str(f) for f in fields]
 
     @staticmethod
     def parse_fields(fields):
@@ -587,7 +586,7 @@ class LocalInstrumentProvider(InstrumentProvider):
         fname = self._uri_inst.format(market)
         if not os.path.exists(fname):
             raise ValueError("instruments not exists for market " + market)
-        _instruments = dict()
+        _instruments = {}
         df = pd.read_csv(fname, sep="\t", names=["inst", "start_datetime", "end_datetime", "save_inst"])
         df["start_datetime"] = pd.to_datetime(df["start_datetime"])
         df["end_datetime"] = pd.to_datetime(df["end_datetime"])
@@ -705,9 +704,9 @@ class LocalDatasetProvider(DatasetProvider):
         start_time = cal[0]
         end_time = cal[-1]
 
-        data = self.dataset_processor(instruments_d, column_names, start_time, end_time, freq)
-
-        return data
+        return self.dataset_processor(
+            instruments_d, column_names, start_time, end_time, freq
+        )
 
     @staticmethod
     def multi_cache_walker(instruments, fields, start_time=None, end_time=None, freq="day"):
@@ -780,8 +779,7 @@ class ClientCalendarProvider(CalendarProvider):
             msg_queue=self.queue,
             msg_proc_func=lambda response_content: [pd.Timestamp(c) for c in response_content],
         )
-        result = self.queue.get(timeout=C["timeout"])
-        return result
+        return self.queue.get(timeout=C["timeout"])
 
 
 class ClientInstrumentProvider(InstrumentProvider):
@@ -800,12 +798,13 @@ class ClientInstrumentProvider(InstrumentProvider):
     def list_instruments(self, instruments, start_time=None, end_time=None, freq="day", as_list=False):
         def inst_msg_proc_func(response_content):
             if isinstance(response_content, dict):
-                instrument = {
-                    i: [(pd.Timestamp(s), pd.Timestamp(e)) for s, e in t] for i, t in response_content.items()
+                return {
+                    i: [(pd.Timestamp(s), pd.Timestamp(e)) for s, e in t]
+                    for i, t in response_content.items()
                 }
+
             else:
-                instrument = response_content
-            return instrument
+                return response_content
 
         self.conn.send_request(
             request_type="instrument",
@@ -878,20 +877,19 @@ class ClientDatasetProvider(DatasetProvider):
             feature_uri = self.queue.get(timeout=C["timeout"])
             if isinstance(feature_uri, Exception):
                 raise feature_uri
-            else:
-                instruments_d = self.get_instruments_d(instruments, freq)
-                column_names = self.get_column_names(fields)
-                cal = Cal.calendar(start_time, end_time, freq)
-                if len(cal) == 0:
-                    return pd.DataFrame(columns=column_names)
-                start_time = cal[0]
-                end_time = cal[-1]
+            instruments_d = self.get_instruments_d(instruments, freq)
+            column_names = self.get_column_names(fields)
+            cal = Cal.calendar(start_time, end_time, freq)
+            if len(cal) == 0:
+                return pd.DataFrame(columns=column_names)
+            start_time = cal[0]
+            end_time = cal[-1]
 
-                data = self.dataset_processor(instruments_d, column_names, start_time, end_time, freq)
-                if return_uri:
-                    return data, feature_uri
-                else:
-                    return data
+            data = self.dataset_processor(instruments_d, column_names, start_time, end_time, freq)
+            if return_uri:
+                return data, feature_uri
+            else:
+                return data
         else:
 
             """

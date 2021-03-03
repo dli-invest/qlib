@@ -104,10 +104,9 @@ class Account:
             # if suspend, no new price to be updated, profit is 0
             if trader.check_stock_suspended(code, today):
                 continue
-            else:
-                today_close = trader.get_close(code, today)
-                profit += (today_close - self.current.position[code]["price"]) * self.current.position[code]["amount"]
-                self.current.update_stock_price(stock_id=code, price=today_close)
+            today_close = trader.get_close(code, today)
+            profit += (today_close - self.current.position[code]["price"]) * self.current.position[code]["amount"]
+            self.current.update_stock_price(stock_id=code, price=today_close)
         self.rtn += profit
         # update holding day count
         self.current.add_count_all()
@@ -163,7 +162,7 @@ class Account:
         self.init_vars(position.init_cash)
         self.current = position
         self.report = report
-        self.last_trade_date = last_trade_date if last_trade_date else None
+        self.last_trade_date = last_trade_date or None
 
     def save_account(self, account_path):
         self.current.save_position(account_path / "position.xlsx", self.last_trade_date)

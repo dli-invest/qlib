@@ -416,8 +416,12 @@ class DataHandlerLP(DataHandler):
         # TODO: Be able to cache handler data. Save the memory for data processing
 
     def _get_df_by_key(self, data_key: str = DK_I) -> pd.DataFrame:
-        df = getattr(self, {self.DK_R: "_data", self.DK_I: "_infer", self.DK_L: "_learn"}[data_key])
-        return df
+        return getattr(
+            self,
+            {self.DK_R: "_data", self.DK_I: "_infer", self.DK_L: "_learn"}[
+                data_key
+            ],
+        )
 
     def fetch(
         self,

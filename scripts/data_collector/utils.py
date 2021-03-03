@@ -210,10 +210,7 @@ def symbol_suffix_to_prefix(symbol: str, capital: bool = True) -> str:
 
     """
     code, exchange = symbol.split(".")
-    if exchange.lower() in ["sh", "ss"]:
-        res = f"sh{code}"
-    else:
-        res = f"{exchange}{code}"
+    res = f"sh{code}" if exchange.lower() in ["sh", "ss"] else f"{exchange}{code}"
     return res.upper() if capital else res.lower()
 
 

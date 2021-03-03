@@ -149,7 +149,7 @@ class HyperparamOptManager:
         fields = list(params.keys())
         fields.sort()
 
-        return "_".join([str(params[k]) for k in fields])
+        return "_".join(str(params[k]) for k in fields)
 
     def get_next_parameters(self, ranges_to_skip=None):
         """Returns the next set of parameters to optimise.
@@ -299,7 +299,7 @@ class DistributedHyperparamOptManager(HyperparamOptManager):
 
     @property
     def optimisation_completed(self):
-        return False if self.worker_search_queue else True
+        return not self.worker_search_queue
 
     def get_next_parameters(self):
         """Returns next dictionary of hyperparameters to optimise."""
@@ -328,12 +328,9 @@ class DistributedHyperparamOptManager(HyperparamOptManager):
         )
 
         if os.path.exists(self.serialised_ranges_folder):
-            df = pd.read_csv(self.serialised_ranges_path, index_col=0)
-        else:
-            print("Unable to load - regenerating serach ranges instead")
-            df = self.update_serialised_hyperparam_df()
-
-        return df
+            return pd.read_csv(self.serialised_ranges_path, index_col=0)
+        print("Unable to load - regenerating serach ranges instead")
+        return self.update_serialised_hyperparam_df()
 
     def update_serialised_hyperparam_df(self):
         """Regenerates hyperparameter combinations and saves to file.
@@ -372,9 +369,7 @@ class DistributedHyperparamOptManager(HyperparamOptManager):
             name_list.append(name)
             param_list.append(params)
 
-        full_search_df = pd.DataFrame(param_list, index=name_list)
-
-        return full_search_df
+        return pd.DataFrame(param_list, index=name_list)
 
     def clear(self):  # reset when cleared
         """Clears results for hyperparameter manager and resets."""

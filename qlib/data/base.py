@@ -195,10 +195,7 @@ class Feature(Expression):
     """
 
     def __init__(self, name=None):
-        if name:
-            self._name = name.lower()
-        else:
-            self._name = type(self).__name__.lower()
+        self._name = name.lower() if name else type(self).__name__.lower()
 
     def __str__(self):
         return "$" + self._name
