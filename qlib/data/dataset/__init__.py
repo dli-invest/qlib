@@ -424,5 +424,4 @@ class TSDatasetH(DatasetH):
         # TSDatasetH will retrieve more data for complete
         data = super()._prepare_seg(slice(pad_start, end), **kwargs)
 
-        tsds = TSDataSampler(data=data, start=start, end=end, step_len=self.step_len)
-        return tsds
+        return TSDataSampler(data=data, start=start, end=end, step_len=self.step_len)

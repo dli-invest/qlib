@@ -399,10 +399,7 @@ class DiskExpressionCache(ExpressionCache):
 
     @staticmethod
     def check_cache_exists(cache_path):
-        for p in [cache_path, cache_path + ".meta"]:
-            if not Path(p).exists():
-                return False
-        return True
+        return all(Path(p).exists() for p in [cache_path, cache_path + ".meta"])
 
     def _expression(self, instrument, field, start_time=None, end_time=None, freq="day"):
         _cache_uri = self._uri(instrument=instrument, field=field, start_time=None, end_time=None, freq=freq)
@@ -441,28 +438,27 @@ class DiskExpressionCache(ExpressionCache):
             # cache unavailable, generate the cache
             if not os.path.exists(_instrument_dir):
                 os.makedirs(_instrument_dir, exist_ok=True)
-            if not isinstance(eval(parse_field(field)), Feature):
-                # When the expression is not a raw feature
-                # generate expression cache if the feature is not a Feature
-                # instance
-                series = self.provider.expression(instrument, field, _calendar[0], _calendar[-1], freq)
-                if not series.empty:
-                    # This expresion is empty, we don't generate any cache for it.
-                    with CacheUtils.writer_lock(self.r, "expression-%s" % _cache_uri):
-                        self.gen_expression_cache(
-                            expression_data=series,
-                            cache_path=cache_path,
-                            instrument=instrument,
-                            field=field,
-                            freq=freq,
-                            last_update=str(_calendar[-1]),
-                        )
-                    return series.loc[start_index:end_index]
-                else:
-                    return series
-            else:
+            if isinstance(eval(parse_field(field)), Feature):
                 # If the expression is a raw feature(such as $close, $open)
                 return self.provider.expression(instrument, field, start_time, end_time, freq)
+
+            # When the expression is not a raw feature
+            # generate expression cache if the feature is not a Feature
+            # instance
+            series = self.provider.expression(instrument, field, _calendar[0], _calendar[-1], freq)
+            if series.empty:
+                return series
+            # This expresion is empty, we don't generate any cache for it.
+            with CacheUtils.writer_lock(self.r, "expression-%s" % _cache_uri):
+                self.gen_expression_cache(
+                    expression_data=series,
+                    cache_path=cache_path,
+                    instrument=instrument,
+                    field=field,
+                    freq=freq,
+                    last_update=str(_calendar[-1]),
+                )
+            return series.loc[start_index:end_index]
 
     @staticmethod
     def clear_cache(cache_path):
@@ -520,36 +516,35 @@ class DiskExpressionCache(ExpressionCache):
                 # Including last updated calendar, we only get 1 item.
                 # No future updating is needed.
                 return 1
-            else:
-                # get the data needed after the historical data are removed.
-                # The start index of new data
-                current_index = len(whole_calendar) - len(new_calendar) + 1
+            # get the data needed after the historical data are removed.
+            # The start index of new data
+            current_index = len(whole_calendar) - len(new_calendar) + 1
 
-                # The existing data length
-                size_bytes = os.path.getsize(cp_cache_uri)
-                ele_size = np.dtype("<f").itemsize
-                assert size_bytes % ele_size == 0
-                ele_n = size_bytes // ele_size - 1
+            # The existing data length
+            size_bytes = os.path.getsize(cp_cache_uri)
+            ele_size = np.dtype("<f").itemsize
+            assert size_bytes % ele_size == 0
+            ele_n = size_bytes // ele_size - 1
 
-                expr = ExpressionD.get_expression_instance(field)
-                lft_etd, rght_etd = expr.get_extended_window_size()
-                # The expression used the future data after rght_etd days.
-                # So the last rght_etd data should be removed.
-                # There are most `ele_n` period of data can be remove
-                remove_n = min(rght_etd, ele_n)
-                assert new_calendar[1] == whole_calendar[current_index]
-                data = self.provider.expression(
-                    instrument, field, whole_calendar[current_index - remove_n], new_calendar[-1], freq
-                )
-                with open(cp_cache_uri, "ab") as f:
-                    data = np.array(data).astype("<f")
-                    # Remove the last bits
-                    f.truncate(size_bytes - ele_size * remove_n)
-                    f.write(data)
-                # update meta file
-                d["info"]["last_update"] = str(new_calendar[-1])
-                with open(cp_cache_uri + ".meta", "wb") as f:
-                    pickle.dump(d, f)
+            expr = ExpressionD.get_expression_instance(field)
+            lft_etd, rght_etd = expr.get_extended_window_size()
+            # The expression used the future data after rght_etd days.
+            # So the last rght_etd data should be removed.
+            # There are most `ele_n` period of data can be remove
+            remove_n = min(rght_etd, ele_n)
+            assert new_calendar[1] == whole_calendar[current_index]
+            data = self.provider.expression(
+                instrument, field, whole_calendar[current_index - remove_n], new_calendar[-1], freq
+            )
+            with open(cp_cache_uri, "ab") as f:
+                data = np.array(data).astype("<f")
+                # Remove the last bits
+                f.truncate(size_bytes - ele_size * remove_n)
+                f.write(data)
+            # update meta file
+            d["info"]["last_update"] = str(new_calendar[-1])
+            with open(cp_cache_uri + ".meta", "wb") as f:
+                pickle.dump(d, f)
         return 0
 
 
@@ -569,10 +564,10 @@ class DiskDatasetCache(DatasetCache):
 
     @staticmethod
     def check_cache_exists(cache_path):
-        for p in [cache_path, cache_path + ".index", cache_path + ".meta"]:
-            if not Path(p).exists():
-                return False
-        return True
+        return all(
+            Path(p).exists()
+            for p in [cache_path, cache_path + ".index", cache_path + ".meta"]
+        )
 
     @classmethod
     def read_data_from_cache(cls, cache_path, start_time, end_time, fields):
@@ -662,12 +657,12 @@ class DiskDatasetCache(DatasetCache):
             self.logger.debug(f"The cache dataset has already existed {cache_path}. Return the uri directly")
             with CacheUtils.reader_lock(self.r, "dataset-%s" % _cache_uri):
                 CacheUtils.visit(cache_path)
-            return _cache_uri
         else:
             # cache unavailable, generate the cache
             with CacheUtils.writer_lock(self.r, "dataset-%s" % _cache_uri):
                 self.gen_dataset_cache(cache_path=cache_path, instruments=instruments, fields=fields, freq=freq)
-            return _cache_uri
+
+        return _cache_uri
 
     class IndexManager:
         """
@@ -868,73 +863,71 @@ class DiskDatasetCache(DatasetCache):
                 # Including last updated calendar, we only get 1 item.
                 # No future updating is needed.
                 return 1
+            # get the data needed after the historical data are removed.
+            # The start index of new data
+            current_index = len(whole_calendar) - len(new_calendar) + 1
+
+            # To avoid recursive import
+            from .data import ExpressionD
+
+            # The existing data length
+            lft_etd = rght_etd = 0
+            for field in fields:
+                expr = ExpressionD.get_expression_instance(field)
+                l, r = expr.get_extended_window_size()
+                lft_etd = max(lft_etd, l)
+                rght_etd = max(rght_etd, r)
+            # remove the period that should be updated.
+            if index_data.empty:
+                # We don't have any data for such dataset. Nothing to remove
+                rm_n_period = rm_lines = 0
             else:
-                # get the data needed after the historical data are removed.
-                # The start index of new data
-                current_index = len(whole_calendar) - len(new_calendar) + 1
-
-                # To avoid recursive import
-                from .data import ExpressionD
-
-                # The existing data length
-                lft_etd = rght_etd = 0
-                for field in fields:
-                    expr = ExpressionD.get_expression_instance(field)
-                    l, r = expr.get_extended_window_size()
-                    lft_etd = max(lft_etd, l)
-                    rght_etd = max(rght_etd, r)
-                # remove the period that should be updated.
-                if index_data.empty:
-                    # We don't have any data for such dataset. Nothing to remove
-                    rm_n_period = rm_lines = 0
-                else:
-                    rm_n_period = min(rght_etd, index_data.shape[0])
-                    rm_lines = (
-                        (index_data["end"] - index_data["start"])
-                        .loc[whole_calendar[current_index - rm_n_period] :]
-                        .sum()
-                        .item()
-                    )
-
-                data = self.provider.dataset(
-                    instruments, fields, whole_calendar[current_index - rm_n_period], new_calendar[-1], freq
+                rm_n_period = min(rght_etd, index_data.shape[0])
+                rm_lines = (
+                    (index_data["end"] - index_data["start"])
+                    .loc[whole_calendar[current_index - rm_n_period] :]
+                    .sum()
+                    .item()
                 )
 
-                if not data.empty:
-                    data.reset_index(inplace=True)
-                    data.set_index(["datetime", "instrument"], inplace=True)
-                    data.sort_index(inplace=True)
-                else:
-                    return 0  # No data to update cache
+            data = self.provider.dataset(
+                instruments, fields, whole_calendar[current_index - rm_n_period], new_calendar[-1], freq
+            )
 
-                store = pd.HDFStore(cp_cache_uri)
-                # FIXME:
-                # Because the feature cache are stored as .bin file.
-                # So the series read from features are all float32.
-                # However, the first dataset cache is calulated based on the
-                # raw data. So the data type may be float64.
-                # Different data type will result in failure of appending data
-                if "/{}".format(DatasetCache.HDF_KEY) in store.keys():
-                    schema = store.select(DatasetCache.HDF_KEY, start=0, stop=0)
-                    for col, dtype in schema.dtypes.items():
-                        data[col] = data[col].astype(dtype)
-                if rm_lines > 0:
-                    store.remove(key=im.KEY, start=-rm_lines)
-                store.append(DatasetCache.HDF_KEY, data)
-                store.close()
+            if data.empty:
+                return 0  # No data to update cache
 
-                # update index file
-                new_index_data = im.build_index_from_data(
-                    data.loc(axis=0)[whole_calendar[current_index] :, :],
-                    start_index=0 if index_data.empty else index_data["end"].iloc[-1],
-                )
-                im.append_index(new_index_data)
+            data.reset_index(inplace=True)
+            data.set_index(["datetime", "instrument"], inplace=True)
+            data.sort_index(inplace=True)
+            store = pd.HDFStore(cp_cache_uri)
+            # FIXME:
+            # Because the feature cache are stored as .bin file.
+            # So the series read from features are all float32.
+            # However, the first dataset cache is calulated based on the
+            # raw data. So the data type may be float64.
+            # Different data type will result in failure of appending data
+            if "/{}".format(DatasetCache.HDF_KEY) in store.keys():
+                schema = store.select(DatasetCache.HDF_KEY, start=0, stop=0)
+                for col, dtype in schema.dtypes.items():
+                    data[col] = data[col].astype(dtype)
+            if rm_lines > 0:
+                store.remove(key=im.KEY, start=-rm_lines)
+            store.append(DatasetCache.HDF_KEY, data)
+            store.close()
 
-                # update meta file
-                d["info"]["last_update"] = str(new_calendar[-1])
-                with open(cp_cache_uri + ".meta", "wb") as f:
-                    pickle.dump(d, f)
-                return 0
+            # update index file
+            new_index_data = im.build_index_from_data(
+                data.loc(axis=0)[whole_calendar[current_index] :, :],
+                start_index=0 if index_data.empty else index_data["end"].iloc[-1],
+            )
+            im.append_index(new_index_data)
+
+            # update meta file
+            d["info"]["last_update"] = str(new_calendar[-1])
+            with open(cp_cache_uri + ".meta", "wb") as f:
+                pickle.dump(d, f)
+            return 0
 
 
 class SimpleDatasetCache(DatasetCache):

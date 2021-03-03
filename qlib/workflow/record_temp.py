@@ -241,8 +241,12 @@ class PortAnaRecord(SignalRecord):
         self.recorder.save_objects(**{"positions_normal.pkl": positions_normal}, artifact_path=PortAnaRecord.get_path())
 
         # analysis
-        analysis = dict()
-        analysis["excess_return_without_cost"] = risk_analysis(report_normal["return"] - report_normal["bench"])
+        analysis = {
+            "excess_return_without_cost": risk_analysis(
+                report_normal["return"] - report_normal["bench"]
+            )
+        }
+
         analysis["excess_return_with_cost"] = risk_analysis(
             report_normal["return"] - report_normal["bench"] - report_normal["cost"]
         )

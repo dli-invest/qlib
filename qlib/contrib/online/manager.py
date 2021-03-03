@@ -66,13 +66,11 @@ class UserManager:
         cur_user_list = [user_id for user_id in self.users]
         if user_id in cur_user_list:
             raise ValueError("User {} has been loaded".format(user_id))
-        else:
-            trade_account = Account(0)
-            trade_account.load_account(account_path)
-            strategy = load_instance(strategy_file)
-            model = load_instance(model_file)
-            user = User(account=trade_account, strategy=strategy, model=model)
-            return user
+        trade_account = Account(0)
+        trade_account.load_account(account_path)
+        strategy = load_instance(strategy_file)
+        model = load_instance(model_file)
+        return User(account=trade_account, strategy=strategy, model=model)
 
     def save_user_data(self, user_id):
         """
@@ -80,7 +78,7 @@ class UserManager:
             Parameter
                 user_id : string
         """
-        if not user_id in self.users:
+        if user_id not in self.users:
             raise ValueError("Cannot find user {}".format(user_id))
         self.users[user_id].account.save_account(self.data_path / user_id)
         save_instance(

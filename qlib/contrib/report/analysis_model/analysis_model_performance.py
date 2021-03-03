@@ -135,11 +135,7 @@ def _pred_ic(pred_label: pd.DataFrame = None, rank: bool = False, **kwargs) -> t
     dist = stats.norm
     _qqplot_fig = _plot_qq(ic, dist)
 
-    if isinstance(dist, stats.norm.__class__):
-        dist_name = "Normal"
-    else:
-        dist_name = "Unknown"
-
+    dist_name = "Normal" if isinstance(dist, stats.norm.__class__) else "Unknown"
     _bin_size = ((_ic_df.max() - _ic_df.min()) / 20).min()
     _sub_graph_data = [
         (
@@ -229,14 +225,13 @@ def ic_figure(ic_df: pd.DataFrame, show_nature_day=True, **kwargs) -> go.Figure:
         ic_df = ic_df.reindex(date_index)
     # FIXME: support HIGH-FREQ
     ic_df.index = ic_df.index.strftime("%Y-%m-%d")
-    ic_bar_figure = BarGraph(
+    return BarGraph(
         ic_df,
         layout=dict(
             title="Information Coefficient (IC)",
             xaxis=dict(type="category", tickangle=45),
         ),
     ).figure
-    return ic_bar_figure
 
 
 def model_performance_graph(

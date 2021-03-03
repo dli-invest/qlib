@@ -199,8 +199,7 @@ def get_decoder_mask(self_attn_inputs):
     """
     len_s = tf.shape(self_attn_inputs)[1]
     bs = tf.shape(self_attn_inputs)[:1]
-    mask = K.cumsum(tf.eye(len_s, batch_shape=bs), 1)
-    return mask
+    return K.cumsum(tf.eye(len_s, batch_shape=bs), 1)
 
 
 class ScaledDotProductAttention:
@@ -639,15 +638,13 @@ class TemporalFusionTransformer(object):
             time[i, :, 0] = sliced[time_col]
             identifiers[i, :, 0] = sliced[id_col]
 
-        sampled_data = {
+        return {
             "inputs": inputs,
             "outputs": outputs[:, self.num_encoder_steps :, :],
             "active_entries": np.ones_like(outputs[:, self.num_encoder_steps :, :]),
             "time": time,
             "identifier": identifiers,
         }
-
-        return sampled_data
 
     def _batch_data(self, data):
         """Batches data for training.
@@ -865,14 +862,14 @@ class TemporalFusionTransformer(object):
         def get_lstm(return_state):
             """Returns LSTM cell initialized with default parameters."""
             if self.use_cudnn:
-                lstm = tf.keras.layers.CuDNNLSTM(
+                return tf.keras.layers.CuDNNLSTM(
                     self.hidden_layer_size,
                     return_sequences=True,
                     return_state=return_state,
                     stateful=False,
                 )
             else:
-                lstm = tf.keras.layers.LSTM(
+                return tf.keras.layers.LSTM(
                     self.hidden_layer_size,
                     return_sequences=True,
                     return_state=return_state,
@@ -885,7 +882,6 @@ class TemporalFusionTransformer(object):
                     unroll=False,
                     use_bias=True,
                 )
-            return lstm
 
         history_lstm, state_h, state_c = get_lstm(return_state=True)(
             historical_features, initial_state=[static_context_state_h, static_context_state_c]

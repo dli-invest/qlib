@@ -161,7 +161,7 @@ class GATs(Model):
 
         mask = torch.isfinite(label)
 
-        if self.metric == "" or self.metric == "loss":
+        if self.metric in ["", "loss"]:
             return -self.loss_fn(pred[mask], label[mask])
 
         raise ValueError("unknown metric `%s`" % self.metric)
@@ -245,7 +245,7 @@ class GATs(Model):
         x_train, y_train = df_train["feature"], df_train["label"]
         x_valid, y_valid = df_valid["feature"], df_valid["label"]
 
-        if save_path == None:
+        if save_path is None:
             save_path = create_save_path(save_path)
         stop_steps = 0
         best_score = -np.inf
@@ -255,7 +255,7 @@ class GATs(Model):
 
         # load pretrained base_model
         if self.with_pretrain:
-            if self.model_path == None:
+            if self.model_path is None:
                 raise ValueError("the path of the pretrained model should be given first!")
             self.logger.info("Loading pretrained model...")
             if self.base_model == "LSTM":
@@ -379,8 +379,7 @@ class GATModel(nn.Module):
         self.a_t = torch.t(self.a)
         attention_out = self.a_t.mm(torch.t(attention_in)).view(sample_num, sample_num)
         attention_out = self.leaky_relu(attention_out)
-        att_weight = self.softmax(attention_out)
-        return att_weight
+        return self.softmax(attention_out)
 
     def forward(self, x):
         # x: [N, F*T]

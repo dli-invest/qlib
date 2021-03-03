@@ -42,8 +42,7 @@ def risk_analysis(r, N=252):
         "information_ratio": information_ratio,
         "max_drawdown": max_drawdown,
     }
-    res = pd.Series(data, index=data.keys()).to_frame("risk")
-    return res
+    return pd.Series(data, index=data.keys()).to_frame("risk")
 
 
 def get_strategy(

@@ -189,7 +189,7 @@ def load(tf_session, model_folder, cp_name, scope=None, verbose=False):
 
     print_weights_in_checkpoint(model_folder, cp_name)
 
-    initial_vars = set([v.name for v in tf.get_default_graph().as_graph_def().node])
+    initial_vars = {v.name for v in tf.get_default_graph().as_graph_def().node}
 
     # Saver
     if scope is None:
@@ -199,7 +199,7 @@ def load(tf_session, model_folder, cp_name, scope=None, verbose=False):
         saver = tf.train.Saver(var_list=var_list, max_to_keep=100000)
     # Load
     saver.restore(tf_session, load_path)
-    all_vars = set([v.name for v in tf.get_default_graph().as_graph_def().node])
+    all_vars = {v.name for v in tf.get_default_graph().as_graph_def().node}
 
     if verbose:
         print("Restored {0}".format(",".join(initial_vars.difference(all_vars))))

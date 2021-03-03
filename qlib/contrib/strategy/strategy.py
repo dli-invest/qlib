@@ -178,7 +178,7 @@ class WeightStrategyBase(BaseStrategy, AdjustTimer):
             score=score_series, current=current_temp, trade_date=trade_date
         )
 
-        order_list = self.order_generator.generate_order_list_from_target_weight_position(
+        return self.order_generator.generate_order_list_from_target_weight_position(
             current=current_temp,
             trade_exchange=trade_exchange,
             risk_degree=self.get_risk_degree(trade_date),
@@ -186,7 +186,6 @@ class WeightStrategyBase(BaseStrategy, AdjustTimer):
             pred_date=pred_date,
             trade_date=trade_date,
         )
-        return order_list
 
 
 class TopkDropoutStrategy(BaseStrategy, ListAdjustTimer):

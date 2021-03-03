@@ -66,10 +66,7 @@ class BaseExecutor:
             "trade_price",
             "factor",
         ]
-        data = []
-        for [order, trade_val, trade_cost, trade_price] in trade_info:
-            data.append(
-                [
+        data = [[
                     trade_date,
                     order.stock_id,
                     order.direction,
@@ -78,8 +75,7 @@ class BaseExecutor:
                     trade_cost,
                     trade_price,
                     order.factor,
-                ]
-            )
+                ] for [order, trade_val, trade_cost, trade_price] in trade_info]
         df = pd.DataFrame(data, columns=columns)
         df.to_csv(transaction_path, index=False)
 
@@ -94,7 +90,7 @@ class BaseExecutor:
         trade_info = []
         for i in range(len(transaction)):
             date = transaction.loc[i]["date"]
-            if not date == filedate:
+            if date != filedate:
                 continue
                 # raise ValueError("date in transaction file {} not equal to it's file date{}".format(date, filedate))
             order = Order(
@@ -219,8 +215,9 @@ def load_score_series(user_path, trade_date):
     if not folder_path.exists():
         folder_path.mkdir(parents=True)
     file_path = folder_path / "score_{}.csv".format(str(trade_date.date()))
-    score_series = pd.read_csv(file_path, index_col=0, header=None, names=["instrument", "score"])
-    return score_series
+    return pd.read_csv(
+        file_path, index_col=0, header=None, names=["instrument", "score"]
+    )
 
 
 def save_order_list(order_list, user_path, trade_date):

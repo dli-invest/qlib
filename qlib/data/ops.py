@@ -613,8 +613,10 @@ class If(ExpressionOps):
             series_right = self.feature_right.load(instrument, start_index, end_index, freq)
         else:
             series_right = self.feature_right
-        series = pd.Series(np.where(series_cond, series_left, series_right), index=series_cond.index)
-        return series
+        return pd.Series(
+            np.where(series_cond, series_left, series_right),
+            index=series_cond.index,
+        )
 
     def get_longest_back_rolling(self):
         if isinstance(self.feature_left, Expression):
@@ -1350,10 +1352,11 @@ class PairRolling(ExpressionOps):
         series_left = self.feature_left.load(instrument, start_index, end_index, freq)
         series_right = self.feature_right.load(instrument, start_index, end_index, freq)
         if self.N == 0:
-            series = getattr(series_left.expanding(min_periods=1), self.func)(series_right)
+            return getattr(series_left.expanding(min_periods=1), self.func)(series_right)
         else:
-            series = getattr(series_left.rolling(self.N, min_periods=1), self.func)(series_right)
-        return series
+            return getattr(series_left.rolling(self.N, min_periods=1), self.func)(
+                series_right
+            )
 
     def get_longest_back_rolling(self):
         if self.N == 0:

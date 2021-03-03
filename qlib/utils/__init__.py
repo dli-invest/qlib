@@ -453,9 +453,7 @@ def normalize_cache_instruments(instruments):
         instruments = sorted(list(instruments))
     else:
         # dict type stockpool
-        if "market" in instruments:
-            pass
-        else:
+        if "market" not in instruments:
             instruments = {k: sorted(v) for k, v in instruments.items()}
     return instruments
 
@@ -555,8 +553,7 @@ def get_date_in_file_name(file_name):
                 'YYYY-MM-DD'
     """
     pattern = "[0-9]{4}-[0-9]{2}-[0-9]{2}"
-    date = re.search(pattern, str(file_name)).group()
-    return date
+    return re.search(pattern, str(file_name)).group()
 
 
 def split_pred(pred, number=None, split_date=None):
@@ -632,10 +629,7 @@ def exists_qlib_data(qlib_dir):
     df = pd.read_csv(_instrument, sep="\t", names=["inst", "start_datetime", "end_datetime", "save_inst"])
     df = df.iloc[:, [0, -1]].fillna(axis=1, method="ffill")
     miss_code = set(df.iloc[:, -1].apply(str.lower)) - set(code_names)
-    if miss_code and any(map(lambda x: "sht" not in x, miss_code)):
-        return False
-
-    return True
+    return not miss_code or not any(map(lambda x: "sht" not in x, miss_code))
 
 
 def lazy_sort_index(df: pd.DataFrame, axis=0) -> pd.DataFrame:

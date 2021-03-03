@@ -116,17 +116,18 @@ class DLWParser(DataLoader):
 
     def load(self, instruments=None, start_time=None, end_time=None) -> pd.DataFrame:
         if self.is_group:
-            df = pd.concat(
+            return pd.concat(
                 {
-                    grp: self.load_group_df(instruments, exprs, names, start_time, end_time)
+                    grp: self.load_group_df(
+                        instruments, exprs, names, start_time, end_time
+                    )
                     for grp, (exprs, names) in self.fields.items()
                 },
                 axis=1,
             )
-        else:
-            exprs, names = self.fields
-            df = self.load_group_df(instruments, exprs, names, start_time, end_time)
-        return df
+
+        exprs, names = self.fields
+        return self.load_group_df(instruments, exprs, names, start_time, end_time)
 
 
 class QlibDataLoader(DLWParser):

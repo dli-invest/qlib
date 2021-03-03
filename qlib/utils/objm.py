@@ -93,10 +93,7 @@ class FileManager(ObjManager):
     """
 
     def __init__(self, path=None):
-        if path is None:
-            self.path = Path(self.create_path())
-        else:
-            self.path = Path(path).resolve()
+        self.path = Path(self.create_path()) if path is None else Path(path).resolve()
 
     def create_path(self) -> str:
         try:

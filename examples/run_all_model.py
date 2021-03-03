@@ -74,9 +74,9 @@ signal.signal(signal.SIGINT, handler)
 
 # function to calculate the mean and std of a list in the results dictionary
 def cal_mean_std(results) -> dict:
-    mean_std = dict()
+    mean_std = {}
     for fn in results:
-        mean_std[fn] = dict()
+        mean_std[fn] = {}
         for metric in results[fn]:
             mean = statistics.mean(results[fn][metric]) if len(results[fn][metric]) > 1 else results[fn][metric][0]
             std = statistics.stdev(results[fn][metric]) if len(results[fn][metric]) > 1 else 0
@@ -116,7 +116,7 @@ def execute(cmd):
 
 # function to get all the folders benchmark folder
 def get_all_folders(models, exclude) -> dict:
-    folders = dict()
+    folders = {}
     if isinstance(models, str):
         model_list = models.split(",")
         models = [m.lower().strip("[ ]") for m in model_list]
@@ -143,18 +143,20 @@ def get_all_files(folder_path, dataset) -> (str, str):
 
 # function to retrieve all the results
 def get_all_results(folders) -> dict:
-    results = dict()
+    results = {}
     for fn in folders:
         exp = R.get_exp(experiment_name=fn, create=False)
         recorders = exp.list_recorders()
-        result = dict()
-        result["annualized_return_with_cost"] = list()
-        result["information_ratio_with_cost"] = list()
-        result["max_drawdown_with_cost"] = list()
-        result["ic"] = list()
-        result["icir"] = list()
-        result["rank_ic"] = list()
-        result["rank_icir"] = list()
+        result = {
+            "annualized_return_with_cost": [],
+            "information_ratio_with_cost": [],
+            "max_drawdown_with_cost": [],
+            "ic": [],
+            "icir": [],
+            "rank_ic": [],
+            "rank_icir": [],
+        }
+
         for recorder_id in recorders:
             if recorders[recorder_id].status == "FINISHED":
                 recorder = R.get_recorder(recorder_id=recorder_id, experiment_name=fn)
@@ -236,7 +238,7 @@ def run(times=1, models=None, dataset="Alpha360", exclude=False):
     # get all folders
     folders = get_all_folders(models, exclude)
     # init error messages:
-    errors = dict()
+    errors = {}
     # run all the model for iterations
     for fn in folders:
         # create env by anaconda

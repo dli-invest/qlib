@@ -102,11 +102,7 @@ class QLibTuner(Tuner):
 
         # 3. Fetch the result of subprocess, and check whether the result is Nan
         res = self.fetch_result()
-        if np.isnan(res):
-            status = STATUS_FAIL
-        else:
-            status = STATUS_OK
-
+        status = STATUS_FAIL if np.isnan(res) else STATUS_OK
         # 4. Save the best score and params
         if self.best_res is None or self.best_res > res:
             self.best_res = res
@@ -199,7 +195,7 @@ class QLibTuner(Tuner):
             data_label_space_name = None
 
         # 4. Combine the searching space
-        space = dict()
+        space = {}
         space.update({"model_space": model_space})
         space.update({"strategy_space": strategy_space})
         if data_label_space_name is not None:

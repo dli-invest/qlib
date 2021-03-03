@@ -100,7 +100,7 @@ def _report_figure(df: pd.DataFrame) -> [list, tuple]:
         ("cum_ex_return_wo_cost_mdd", dict(row=7, col=1, graph_kwargs=_temp_fill_args)),
     ]
 
-    _subplot_layout = dict()
+    _subplot_layout = {}
     for i in range(1, 8):
         # yaxis
         _subplot_layout.update({"yaxis{}".format(i): dict(zeroline=True, showline=True, showticklabels=True)})

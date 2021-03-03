@@ -71,10 +71,7 @@ class Exchange:
             if C.region == REG_CN:
                 self.logger.warning(f"limit_threshold may not be set to a reasonable value")
 
-        if deal_price[0] != "$":
-            self.deal_price = "$" + deal_price
-        else:
-            self.deal_price = deal_price
+        self.deal_price = "$" + deal_price if deal_price[0] != "$" else deal_price
         if isinstance(codes, str):
             codes = D.instruments(codes)
         self.codes = codes
@@ -166,19 +163,15 @@ class Exchange:
     def is_stock_tradable(self, stock_id, trade_date):
         # check if stock can be traded
         # same as check in check_order
-        if self.check_stock_suspended(stock_id, trade_date) or self.check_stock_limit(stock_id, trade_date):
-            return False
-        else:
-            return True
+        return not self.check_stock_suspended(
+            stock_id, trade_date
+        ) and not self.check_stock_limit(stock_id, trade_date)
 
     def check_order(self, order):
         # check limit and suspended
-        if self.check_stock_suspended(order.stock_id, order.trade_date) or self.check_stock_limit(
+        return not self.check_stock_suspended(
             order.stock_id, order.trade_date
-        ):
-            return False
-        else:
-            return True
+        ) and not self.check_stock_limit(order.stock_id, order.trade_date)
 
     def deal_order(self, order, trade_account=None, position=None):
         """
@@ -255,19 +248,20 @@ class Exchange:
                     )
                 tradable_weight += weight_position[stock_id]
 
-        if tradable_weight - 1.0 >= 1e-5:
+        if tradable_weight >= 1.00001:
             raise ValueError("tradable_weight is {}, can not greater than 1.".format(tradable_weight))
 
-        amount_dict = {}
-        for stock_id in weight_position:
-            if weight_position[stock_id] > 0.0 and self.is_stock_tradable(stock_id=stock_id, trade_date=trade_date):
-                amount_dict[stock_id] = (
-                    cash
-                    * weight_position[stock_id]
-                    / tradable_weight
-                    // self.get_deal_price(stock_id=stock_id, trade_date=trade_date)
-                )
-        return amount_dict
+        return {
+            stock_id: (
+                cash
+                * weight_position[stock_id]
+                / tradable_weight
+                // self.get_deal_price(stock_id=stock_id, trade_date=trade_date)
+            )
+            for stock_id in weight_position
+            if weight_position[stock_id] > 0.0
+            and self.is_stock_tradable(stock_id=stock_id, trade_date=trade_date)
+        }
 
     def get_real_deal_amount(self, current_amount, target_amount, factor):
         """
@@ -287,10 +281,9 @@ class Exchange:
         else:
             if target_amount == 0:
                 return -current_amount
-            else:
-                deal_amount = current_amount - target_amount
-                deal_amount = self.round_amount_by_trade_unit(deal_amount, factor)
-                return -deal_amount
+            deal_amount = current_amount - target_amount
+            deal_amount = self.round_amount_by_trade_unit(deal_amount, factor)
+            return -deal_amount
 
     def generate_order_for_target_amount_position(self, target_position, current_position, trade_date):
         """Parameter:
@@ -355,14 +348,21 @@ class Exchange:
         position : Position()
         amount_dict : {stock_id : amount}
         """
-        value = 0
-        for stock_id in amount_dict:
+        return sum(
+            self.get_deal_price(stock_id=stock_id, trade_date=trade_date)
+            * amount_dict[stock_id]
+            for stock_id in amount_dict
             if (
-                self.check_stock_suspended(stock_id=stock_id, trade_date=trade_date) is False
-                and self.check_stock_limit(stock_id=stock_id, trade_date=trade_date) is False
-            ):
-                value += self.get_deal_price(stock_id=stock_id, trade_date=trade_date) * amount_dict[stock_id]
-        return value
+                self.check_stock_suspended(
+                    stock_id=stock_id, trade_date=trade_date
+                )
+                is False
+                and self.check_stock_limit(
+                    stock_id=stock_id, trade_date=trade_date
+                )
+                is False
+            )
+        )
 
     def round_amount_by_trade_unit(self, deal_amount, factor):
         """Parameter
